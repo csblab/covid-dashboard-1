@@ -1,0 +1,468 @@
+#!/usr/bin/python
+
+import dash
+from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
+import dash_core_components as dcc
+import dash_table
+import dash_html_components as html
+import pathlib
+import re
+import numpy as np
+import pandas as pd
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+import datetime
+
+
+# GLOBAL VARIABLES
+clear_trigger = 0
+
+
+# FUNCTIONS
+
+def get_date_columns(dataframe):
+    date_regex = re.compile('\d{1,2}/\d{1,2}/\d{2,4}')
+    cols = dataframe.columns
+    return [c for i, c in enumerate(cols) if date_regex.match(c)]  # indexes of the date cols
+
+
+def get_change_per_day(data):
+    return [0] + (data[1:] - data[:-1]).tolist()
+
+
+def get_log(data):
+    v = np.log10(data + 1e-10)
+    return v
+
+
+def plot_country(country, yvals, y2vals):
+    """Makes 3-panel plot from country data"""
+
+    # Log values
+    yvals_log = get_log(yvals)
+    y2vals_log = get_log(y2vals)
+
+    # Per-day change
+    yvals_perday = get_change_per_day(yvals)
+    y2vals_perday = get_change_per_day(y2vals)
+
+    fig = make_subplots(
+        rows=3,
+        cols=1,
+        shared_xaxes=True,
+        specs=[
+            [{"secondary_y": True}],
+            [{"secondary_y": True}],
+            [{"secondary_y": True}]
+        ],
+        vertical_spacing=0.03
+    )
+
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=yvals_perday,
+            mode='lines',
+            name='Daily New Confirmed Cases',
+            line=dict(color='#ff112d', width=2)
+        ),
+        secondary_y=False,
+        row=1,
+        col=1
+    )
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=y2vals_perday,
+            mode='lines',
+            name='Daily New Deaths (right axis)',
+            line=dict(color='black', width=2)
+        ),
+        secondary_y=True,
+        row=1,
+        col=1
+    )
+
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=yvals,
+            mode='lines',
+            name='Total Confirmed',
+            line=dict(color='#0e59ef', width=2)
+        ),
+        secondary_y=False,
+        row=2,
+        col=1
+    )
+
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=y2vals,
+            mode='lines',
+            name='Total Deaths (right axis)',
+            line=dict(color='black', width=2)
+        ),
+        secondary_y=True,
+        row=2,
+        col=1
+    )
+
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=yvals_log,
+            mode='lines',
+            name='log10(Total Confirmed)',
+            line=dict(color='#0eefd9', width=2)
+        ),
+        secondary_y=False,
+        row=3,
+        col=1
+    )
+
+    fig.add_trace(
+        go.Scattergl(
+            x=date_cols,
+            y=y2vals_log,
+            mode='lines',
+            name='log10(Total Deaths) (right axis)',
+            line=dict(color='black', width=2)
+        ),
+        secondary_y=True,
+        row=3,
+        col=1
+    )
+
+    fig.update_yaxes(
+        range=[0, yvals_log[-1]+1],
+        row=3,
+        col=1
+    )
+
+    fig.update_annotations(dict(font_size=8))
+
+    fig.update_layout(
+        height=600,
+        title=dict(
+            text=f'{country}',
+            xanchor='left',
+        ),
+
+        #title_text=f'{country}',
+        legend=dict(
+            bgcolor='rgba(0,0,0,0)',
+            orientation="h",
+            x=0.11, y=1.16)
+
+    )
+    return fig
+
+
+
+DTHRESH = 50 # Threshold for minimum number of cases/deaths
+
+rootdir = pathlib.Path('.')
+output_dir = rootdir / 'data'  # directory where the csv files are
+
+csv_fpath = output_dir / 'Select_COVID_data_PEAKS.csv'
+
+try:
+    csv_fullpath = csv_fpath.resolve(strict=True)
+except FileNotFoundError:
+    print(f'CSV file not found: {csv_fpath}')
+    raise
+else:
+    df = pd.read_csv(csv_fpath)
+
+# Fix dates issue, Michael's file is missing data for last few days
+
+date_cols = get_date_columns(df)
+pst_tz = datetime.timezone(datetime.timedelta(hours=-7))  # define the timezone
+today = datetime.datetime.now(datetime.timezone.utc).astimezone(pst_tz)
+last_date = today - datetime.timedelta(days=3) # Michaels last data point is 3 days ago
+last_date_f = f'{last_date:%d/%m/%Y}'
+last_date_index = date_cols.index(last_date_f) + 1
+
+removed_cols = [ date_cols[i] for i in range(last_date_index,len(date_cols),1)]
+removed_cols.append('Source')
+removed_cols.append('Last_Update_Date')
+
+df.drop(removed_cols, axis=1, inplace=True)
+
+
+# remove rows with extra smoothing levels, we keep only one per country
+
+mask_sufix = (
+    (df['Country_Region_Safe'].str.endswith("_M0")) |
+    (df['Country_Region_Safe'].str.endswith("_S3")) |
+    (df['Country_Region_Safe'].str.endswith("_S7"))
+)
+
+df_filter = df[mask_sufix]
+# filter for min deaths
+
+deathsonly = df_filter[df_filter['Case_Type'] == 'Deaths']
+dates = get_date_columns(df_filter)
+
+min_death_mask = deathsonly[dates[-1]] >= DTHRESH
+keepers = deathsonly[min_death_mask]['Country_Region_Safe'].unique()
+keepmask = df_filter['Country_Region_Safe'].isin(keepers)
+df_filter = df_filter[keepmask]
+
+
+# Make table for app display
+entry_list = list(df_filter['Country_Region_Safe'].unique())
+
+confirmed_mask = df_filter['Case_Type'] == 'Confirmed'
+death_mask = df_filter['Case_Type'] == 'Deaths'
+
+records = []
+for i, entry in enumerate(entry_list):
+        country_mask = df_filter['Country_Region_Safe'] == entry
+
+        confirmed = df_filter[country_mask & confirmed_mask]
+        deaths = df_filter[country_mask & death_mask]
+
+        country_code_mask = df_filter.loc[country_mask, 'Classification_Code']
+
+        country_start_mask_c = df_filter.loc[country_mask, 'Start_Cases']
+        country_peak_mask_c = df_filter.loc[country_mask, 'Peak_Cases']
+
+        country_start_mask_d = df_filter.loc[country_mask, 'Start_Deaths']
+        country_peak_mask_d = df_filter.loc[country_mask, 'Peak_Deaths']
+
+        country_deaths_per_case_mask = df_filter.loc[country_mask, 'Deaths_per_Case']
+
+
+
+        datadict = {
+                 'Location': entry,
+                 'Smoothing': 'XX',
+                 'Class': country_code_mask.to_list()[-1],
+                 'Cases': confirmed[dates[-1]].item(),
+                 'Start_C': country_start_mask_c.to_list()[-1],
+                 'Peak_C': country_peak_mask_c.to_list()[-1],
+                 'Deaths': deaths[dates[-1]].item(),
+                 'Start_D': country_start_mask_d.to_list()[-1],
+                 'Peak_D': country_peak_mask_d.to_list()[-1],
+                 'Deaths/Cases':  country_deaths_per_case_mask.to_list()[-1],           
+     
+        }
+        records.append(datadict)
+
+df_ratio = pd.DataFrame.from_records(
+        data=records,
+        columns=[
+            'Location',
+            'Smoothing',
+            'Class',
+            'Cases',
+            'Start_C',
+            'Peak_C',
+            'Deaths',
+            'Start_D',
+            'Peak_D',
+            'Deaths/Cases', 
+        ]
+)
+
+#Create Dash/Flask app
+
+app = dash.Dash(__name__)
+server = app.server  #for server deployment
+
+app.layout = html.Div(
+    id="content",
+    children=[
+
+        html.Div(
+            id="title",
+            children=[
+                html.H2(
+                    'Visualization of COVID-19 data',
+                    style={'color':  '#36393b', 
+                           'font-family': 'Courier',
+                           'font-weight': 'bold',
+                           'font-size': '30px'
+                           }
+                ) 
+            ]
+        ),
+
+        html.Button('Clear selection', id='clear-button'),
+
+        dash_table.DataTable(
+
+            id='datatable-interactivity-ids',
+
+            columns=[
+                  {"name": i, "id": i, "selectable": True} for i in df_ratio.columns
+            ],
+
+            data=df_ratio.to_dict('records'),
+
+            fill_width=True,
+
+            style_header={
+                         'textAlign': 'center', 
+                         'font_size': '16px',
+                         'backgroundColor': 'rgb(50, 50, 50)',
+                         'color': 'white'
+            },
+
+            fixed_rows={ 'headers': True, 'data': 0 },
+
+            style_cell={
+                    'overflow': 'hidden',
+                    'textOverflow': 'ellipsis', 
+                    'maxWidth': 0,
+                    'textAlign': 'center',
+                    'backgroundColor': 'rgb(239,239,239)',
+                    'color': 'black',
+            },
+            style_data={
+                    #'font_family': 'cursive',
+                    'font_size': '16px',
+                    #'text_align': 'left'
+
+            },
+
+            style_table={
+               'maxHeight': '400px',
+               #'maxWidth': '1400px',
+               'overflowY': 'scroll',
+               'border': 'thin lightgrey solid'
+            },
+
+            style_cell_conditional=[
+
+                {'if': {'column_id': 'Cases'}, 'width': '10%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Deaths'}, 'width': '10%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Peak_C'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Peak_D'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Start_C'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Start_D'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Class'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Smoothing'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Deaths/Cases'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Location'}, 'textAlign': 'left'},
+
+            ],
+            filter_action="native",
+            sort_action="custom",
+            sort_by=[],
+            sort_mode="multi",
+            row_selectable="multi",
+            selected_rows=[],
+            page_action="native",
+        ),
+
+        html.Div(
+            id='plot-container',
+            style={
+                'width': '100%',
+                'display': 'flex',
+                'flex-wrap': 'wrap'
+            }
+        ),
+
+    ]
+)
+
+
+# Callbacks
+
+# sort
+@app.callback(
+    Output('datatable-interactivity-ids', "data"),
+
+    [
+        Input('datatable-interactivity-ids', "sort_by")
+    ]
+)
+def sort_table(sort_cols):
+    # sort_cols is a list of dicts
+    # with colname and and order
+
+    if not sort_cols:
+        return df_ratio.to_dict('records')  # cheaper
+
+    # Do sorting by selected columns
+    sort_by_cols = []
+    sort_order = []
+    for col in sort_cols:
+        cid = col["column_id"]
+        # if cid == "Smoothing":
+        #     cid = "_smoothindex"
+        corder = col["direction"] == "asc"
+        sort_by_cols.append(cid)
+        sort_order.append(corder)
+
+    # Sort dataframe
+    df_ratio.sort_values(sort_by_cols, ascending=sort_order, inplace=True)
+    return df_ratio.to_dict('records')
+
+
+# clear button
+@app.callback(
+    Output('datatable-interactivity-ids', "selected_rows"),
+    [
+        Input('clear-button', 'n_clicks')
+    ]
+)
+def clear_selection(a):
+    return []
+
+# plot
+@app.callback(
+    Output("plot-container", "children"),
+    [
+        Input('datatable-interactivity-ids', "data"),
+        Input('datatable-interactivity-ids', "selected_rows"),
+        Input('clear-button', 'n_clicks'),
+    ],
+)
+def plot_country_by_smoothing(tbl_df, countries, click_clear):
+    """Updates plots with options from click-row """
+
+    fig_lst = []
+    # Was the clear button clicked?
+    global clear_trigger
+    # is_clear = any(
+    #     p['prop_id'] == 'clear-button.n_clicks'
+    #     for p in dash.callback_context.triggered
+    # )
+
+    # if is_clear:
+    if click_clear != clear_trigger:
+        clear_trigger = click_clear
+        return fig_lst
+
+    if not countries:
+        raise PreventUpdate
+
+    for country in countries:
+        #print(df_filter[country]['Country_Region_Safe'])
+        countryname = tbl_df[country]['Location']
+        # print(countryname)
+
+        country_mask = (df_filter['Country_Region_Safe'] == countryname)
+        cmask = country_mask & (df_filter['Case_Type'] == 'Confirmed')
+        dmask = country_mask & (df_filter['Case_Type'] == 'Deaths')
+
+        # dates is global
+
+        cvals = df_filter.loc[cmask][dates].values[0, :]
+        dvals = df_filter.loc[dmask][dates].values[0, :]
+        # print(cvals)
+        # print(dvals)
+        fig = plot_country(countryname, cvals, dvals)
+        fig_lst.append(dcc.Graph(figure=fig))
+    return fig_lst
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
