@@ -146,16 +146,20 @@ def plot_country(country, yvals, y2vals):
 
     fig.update_layout(
         height=600,
+        margin={'l':0,'b':0,'r':10},
         title=dict(
             text=f'{country}',
+            y=0.98,
+            x=0,
             xanchor='left',
+            yanchor='top',
         ),
 
         #title_text=f'{country}',
         legend=dict(
             bgcolor='rgba(0,0,0,0)',
             orientation="h",
-            x=0.11, y=1.16)
+            x=0.06, y=1.16)
 
     )
     return fig
@@ -186,7 +190,7 @@ last_date = today - datetime.timedelta(days=3) # Michaels last data point is 3 d
 last_date_f = f'{last_date:%d/%m/%Y}'
 last_date_index = date_cols.index(last_date_f) + 1
 
-removed_cols = [ date_cols[i] for i in range(last_date_index,len(date_cols),1)]
+removed_cols = [date_cols[i] for i in range(last_date_index,len(date_cols),1)]
 removed_cols.append('Source')
 removed_cols.append('Last_Update_Date')
 
