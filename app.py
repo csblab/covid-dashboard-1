@@ -246,10 +246,12 @@ for i, entry in enumerate(entry_list):
                  'Location': entry,
                  'Smoothing': 'XX',
                  'Class': country_code_mask.to_list()[-1],
-                 'Cases': confirmed[dates[-1]].item(),
+                 #'Cases': confirmed[dates[-1]].item(),
+                 'Cases': confirmed['nCases'].item(),
                  'Start_C': country_start_mask_c.to_list()[-1],
                  'Peak_C': country_peak_mask_c.to_list()[-1],
-                 'Deaths': deaths[dates[-1]].item(),
+                 #'Deaths': deaths[dates[-1]].item(),
+                 'Deaths': deaths['nCases'].item(),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
                  'Deaths/Cases':  country_deaths_per_case_mask.to_list()[-1],           
@@ -469,4 +471,4 @@ def plot_country_by_smoothing(tbl_df, countries, click_clear):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
