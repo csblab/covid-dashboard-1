@@ -146,7 +146,10 @@ def plot_country(country, yvals, y2vals):
 
     fig.update_layout(
         height=600,
-        margin={'l':0,'b':0,'r':10},
+        width=500,
+        margin={'l':0,'b':15,'r':10},
+        #height=600,
+        #margin={'l':0,'b':0,'r':10},
         title=dict(
             text=f'{country}',
             y=0.98,
@@ -159,8 +162,8 @@ def plot_country(country, yvals, y2vals):
         legend=dict(
             bgcolor='rgba(0,0,0,0)',
             orientation="h",
-            x=0.06, y=1.16)
-
+            #x=0.06, y=1.16)
+            x=0, y=-0.2),
     )
     return fig
 
@@ -181,40 +184,52 @@ except FileNotFoundError:
 else:
     df = pd.read_csv(csv_fpath)
 
-# Fix dates issue, Michael's file is missing data for last few days
-
 date_cols = get_date_columns(df)
+
 pst_tz = datetime.timezone(datetime.timedelta(hours=-7))  # define the timezone
 today = datetime.datetime.now(datetime.timezone.utc).astimezone(pst_tz)
-last_date = today - datetime.timedelta(days=3) # Michaels last data point is 3 days ago
-last_date_f = f'{last_date:%d/%m/%Y}'
+last_date = today - datetime.timedelta(days=1) # Take data from yesterday, to be safe
+
+last_date_f = re.sub('2020','20', last_date.strftime('%-m/%-d/%Y'))
+
 last_date_index = date_cols.index(last_date_f) + 1
 
-removed_cols = [date_cols[i] for i in range(last_date_index,len(date_cols),1)]
-removed_cols.append('Source')
-removed_cols.append('Last_Update_Date')
+#removed_cols = [date_cols[i] for i in range(last_date_index, len(date_cols), 1)]
+#removed_cols.append('Source')
+#removed_cols.append('Last_Update_Date')
+
+removed_cols = ['Source','Last_Update_Date']
 
 df.drop(removed_cols, axis=1, inplace=True)
 
 
 # remove rows with extra smoothing levels, we keep only one per country
 
-mask_sufix = (
-    (df['Country_Region_Safe'].str.endswith("_M0")) |
-    (df['Country_Region_Safe'].str.endswith("_S3")) |
-    (df['Country_Region_Safe'].str.endswith("_S7"))
-)
+#mask_sufix = (
+#    (df['Country_Region_Safe'].str.endswith("_M0")) |
+#    (df['Country_Region_Safe'].str.endswith("_S3")) |
+#    (df['Country_Region_Safe'].str.endswith("_S7"))
+#)
 
-df_filter = df[mask_sufix]
+#df_filter = df[mask_sufix]
 # filter for min deaths
 
-deathsonly = df_filter[df_filter['Case_Type'] == 'Deaths']
-dates = get_date_columns(df_filter)
+#deathsonly = df_filter[df_filter['Case_Type'] == 'Deaths']
+#dates = get_date_columns(df_filter)
+
+#min_death_mask = deathsonly[dates[-1]] >= DTHRESH
+#keepers = deathsonly[min_death_mask]['Country_Region_Safe'].unique()
+#keepmask = df_filter['Country_Region_Safe'].isin(keepers)
+#df_filter = df_filter[keepmask]
+
+deathsonly = df[df['Case_Type'] == 'Deaths']
+dates = get_date_columns(df)
 
 min_death_mask = deathsonly[dates[-1]] >= DTHRESH
 keepers = deathsonly[min_death_mask]['Country_Region_Safe'].unique()
-keepmask = df_filter['Country_Region_Safe'].isin(keepers)
-df_filter = df_filter[keepmask]
+keepmask = df['Country_Region_Safe'].isin(keepers)
+df_filter = df[keepmask]
+
 
 
 # Make table for app display
