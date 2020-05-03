@@ -185,42 +185,13 @@ else:
     df = pd.read_csv(csv_fpath)
 
 date_cols = get_date_columns(df)
+last_date = date_cols[-1]
+last_date_index = date_cols.index(last_date) + 1
 
-pst_tz = datetime.timezone(datetime.timedelta(hours=-7))  # define the timezone
-today = datetime.datetime.now(datetime.timezone.utc).astimezone(pst_tz)
-last_date = today - datetime.timedelta(days=1) # Take data from yesterday, to be safe
-
-last_date_f = re.sub('2020','20', last_date.strftime('%-m/%-d/%Y'))
-
-last_date_index = date_cols.index(last_date_f) + 1
-
-#removed_cols = [date_cols[i] for i in range(last_date_index, len(date_cols), 1)]
-#removed_cols.append('Source')
-#removed_cols.append('Last_Update_Date')
-
-removed_cols = ['Source','Last_Update_Date']
+removed_cols = ['Source', 'Last_Update_Date']
 
 df.drop(removed_cols, axis=1, inplace=True)
 
-
-# remove rows with extra smoothing levels, we keep only one per country
-
-#mask_sufix = (
-#    (df['Country_Region_Safe'].str.endswith("_M0")) |
-#    (df['Country_Region_Safe'].str.endswith("_S3")) |
-#    (df['Country_Region_Safe'].str.endswith("_S7"))
-#)
-
-#df_filter = df[mask_sufix]
-# filter for min deaths
-
-#deathsonly = df_filter[df_filter['Case_Type'] == 'Deaths']
-#dates = get_date_columns(df_filter)
-
-#min_death_mask = deathsonly[dates[-1]] >= DTHRESH
-#keepers = deathsonly[min_death_mask]['Country_Region_Safe'].unique()
-#keepmask = df_filter['Country_Region_Safe'].isin(keepers)
-#df_filter = df_filter[keepmask]
 
 deathsonly = df[df['Case_Type'] == 'Deaths']
 dates = get_date_columns(df)
@@ -246,7 +217,7 @@ for i, entry in enumerate(entry_list):
         deaths = df_filter[country_mask & death_mask]
 
         country_code_mask = df_filter.loc[country_mask, 'Classification_Code']
-
+        country_smoothing_mask = df_filter.loc[country_mask, 'Smoothing']
         country_start_mask_c = df_filter.loc[country_mask, 'Start_Cases']
         country_peak_mask_c = df_filter.loc[country_mask, 'Peak_Cases']
 
@@ -254,18 +225,14 @@ for i, entry in enumerate(entry_list):
         country_peak_mask_d = df_filter.loc[country_mask, 'Peak_Deaths']
 
         country_deaths_per_case_mask = df_filter.loc[country_mask, 'Deaths_per_Case']
-
-
-
+        
         datadict = {
                  'Location': entry,
-                 'Smoothing': 'XX',
+                 'Smoothing': country_smoothing_mask.to_list()[-1],
                  'Class': country_code_mask.to_list()[-1],
-                 #'Cases': confirmed[dates[-1]].item(),
                  'Cases': confirmed['nCases'].item(),
                  'Start_C': country_start_mask_c.to_list()[-1],
                  'Peak_C': country_peak_mask_c.to_list()[-1],
-                 #'Deaths': deaths[dates[-1]].item(),
                  'Deaths': deaths['nCases'].item(),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
