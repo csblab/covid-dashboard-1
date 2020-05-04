@@ -215,7 +215,6 @@ for i, entry in enumerate(entry_list):
 
         confirmed = df_filter[country_mask & confirmed_mask]
         deaths = df_filter[country_mask & death_mask]
-
         country_code_mask = df_filter.loc[country_mask, 'Classification_Code']
         country_smoothing_mask = df_filter.loc[country_mask, 'Smoothing']
         country_start_mask_c = df_filter.loc[country_mask, 'Start_Cases']
@@ -233,7 +232,7 @@ for i, entry in enumerate(entry_list):
                  'Cases': confirmed['nCases'].item(),
                  'Start_C': country_start_mask_c.to_list()[-1],
                  'Peak_C': country_peak_mask_c.to_list()[-1],
-                 'Deaths': deaths['nCases'].item(),
+                 'Deaths': deaths['nDeaths'].item(),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
                  'Deaths/Cases':  country_deaths_per_case_mask.to_list()[-1],           
@@ -276,7 +275,7 @@ app.layout = html.Div(
                            'font-weight': 'bold',
                            'font-size': '30px'
                            }
-                ) 
+                )
             ]
         ),
 
