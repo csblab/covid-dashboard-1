@@ -235,7 +235,7 @@ for i, entry in enumerate(entry_list):
                  'Deaths': deaths['nDeaths'].item(),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
-                 'Deaths/Cases':  country_deaths_per_case_mask.to_list()[-1],           
+                 'Deaths/Cases(%)':  country_deaths_per_case_mask.to_list()[-1],           
      
         }
         records.append(datadict)
@@ -252,7 +252,7 @@ df_ratio = pd.DataFrame.from_records(
             'Deaths',
             'Start_D',
             'Peak_D',
-            'Deaths/Cases', 
+            'Deaths/Cases(%)', 
         ]
 )
 
@@ -326,15 +326,15 @@ app.layout = html.Div(
 
             style_cell_conditional=[
 
-                {'if': {'column_id': 'Cases'}, 'width': '10%', 'textAlign': 'center'},
-                {'if': {'column_id': 'Deaths'}, 'width': '10%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Cases'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Deaths'}, 'width': '8%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Peak_C'}, 'width': '8%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Peak_D'}, 'width': '8%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Start_C'}, 'width': '8%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Start_D'}, 'width': '8%', 'textAlign': 'center'},
-                {'if': {'column_id': 'Class'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Class'}, 'width': '7%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Smoothing'}, 'width': '8%', 'textAlign': 'center'},
-                {'if': {'column_id': 'Deaths/Cases'}, 'width': '8%', 'textAlign': 'center'},
+                {'if': {'column_id': 'Deaths/Cases(%)'}, 'width': '10%', 'textAlign': 'center'},
                 {'if': {'column_id': 'Location'}, 'textAlign': 'left'},
 
             ],
@@ -349,29 +349,10 @@ app.layout = html.Div(
         html.Div(
             id="text",
             children=[
-                html.P('(1) Smoothing is done using the original lowess FORTRAN code (W. S. Cleveland, Bell Labs, 1985).',
+                html.P('(1) Smoothing is done using the original lowess FORTRAN code (W. S. Cleveland, Bell Labs, 1985). (2) Classification Code: ‘c’ means Cases peaked, ‘C’ means at least half way down the peak, ‘d’, ‘D’ are same for Deaths.  The category order is from most complete ‘cCdD‘ to least complete ‘====‘. (3) Start Cases (Start_C) is the day the total number of cases exceed 50.  Days are counted from 22 January 2020. (4) Peak Cases (Peak_C) is day new cases peak. Within a category, data is sorted by increasing date cases peaked.',
                 style={'color':  '#36393b', 
                             'font-family': 'Courier',
-                            'font-size': '14px'
-                    }
-                ),
-                html.P('(2) Classification Code: ‘c’ means Cases peaked, ‘C’ means at least half way down the peak, ‘d’, ‘D’ are same for Deaths.  The category order is from most complete ‘cCdD‘ to least complete ‘====‘.',
-                style={'color':  '#36393b', 
-                            'font-family': 'Courier',
-                            'font-size': '14px'
-                    }
-                ),
-
-                html.P('(3) Start Cases (Start_C) is the day the total number of cases exceed 50.  Days are counted from 22 January 2020.',
-                style={'color':  '#36393b', 
-                            'font-family': 'Courier',
-                            'font-size': '14px'
-                    }
-                ),
-                html.P('(4) Peak Cases (Peak_C) is day new cases peak. Within a category, data is sorted by increasing date cases peaked.',
-                style={'color':  '#36393b', 
-                            'font-family': 'Courier',
-                            'font-size': '14px'
+                            'font-size': '12px'
                     }
                 )
             ]
