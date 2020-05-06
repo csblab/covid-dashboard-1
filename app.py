@@ -346,6 +346,36 @@ app.layout = html.Div(
             selected_rows=[],
             page_action="native",
         ),
+        html.Div(
+            id="text",
+            children=[
+                html.P('(1) Smoothing is done using the original lowess FORTRAN code (W. S. Cleveland, Bell Labs, 1985).',
+                style={'color':  '#36393b', 
+                            'font-family': 'Courier',
+                            'font-size': '14px'
+                    }
+                ),
+                html.P('(2) Classification Code: ‘c’ means Cases peaked, ‘C’ means at least half way down the peak, ‘d’, ‘D’ are same for Deaths.  The category order is from most complete ‘cCdD‘ to least complete ‘====‘.',
+                style={'color':  '#36393b', 
+                            'font-family': 'Courier',
+                            'font-size': '14px'
+                    }
+                ),
+
+                html.P('(3) Start Cases (Start_C) is the day the total number of cases exceed 50.  Days are counted from 22 January 2020.',
+                style={'color':  '#36393b', 
+                            'font-family': 'Courier',
+                            'font-size': '14px'
+                    }
+                ),
+                html.P('(4) Peak Cases (Peak_C) is day new cases peak. Within a category, data is sorted by increasing date cases peaked.',
+                style={'color':  '#36393b', 
+                            'font-family': 'Courier',
+                            'font-size': '14px'
+                    }
+                )
+            ]
+        ),
 
         html.Div(
             id='plot-container',
