@@ -269,7 +269,7 @@ app.layout = html.Div(
             id="title",
             children=[
                 html.H2(
-                    'Visualization of COVID-19 data',
+                    'Comparative Analysis of COVID-19 by Levitt Lab ‪Stanford',
                     style={'color':  '#36393b', 
                            'font-family': 'Courier',
                            'font-weight': 'bold',
