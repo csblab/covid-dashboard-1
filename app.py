@@ -212,7 +212,7 @@ death_mask = df_filter['Case_Type'] == 'Deaths'
 records = []
 for i, entry in enumerate(entry_list):
         country_mask = df_filter['Country_Region_Safe'] == entry
-
+        
         confirmed = df_filter[country_mask & confirmed_mask]
         deaths = df_filter[country_mask & death_mask]
         country_code_mask = df_filter.loc[country_mask, 'Classification_Code']
@@ -224,9 +224,10 @@ for i, entry in enumerate(entry_list):
         country_peak_mask_d = df_filter.loc[country_mask, 'Peak_Deaths']
 
         country_deaths_per_case_mask = df_filter.loc[country_mask, 'Deaths_per_Case']
-        
+        country_display = df_filter.loc[country_mask, 'Country_Region']
         datadict = {
-                 'Location': entry,
+                 'Location1': entry,
+                 'Location': country_display.to_list()[-1],  
                  'Smoothing': country_smoothing_mask.to_list()[-1],
                  'Class': country_code_mask.to_list()[-1],
                  'Cases': confirmed['nCases'].item(),
@@ -243,6 +244,7 @@ for i, entry in enumerate(entry_list):
 df_ratio = pd.DataFrame.from_records(
         data=records,
         columns=[
+            'Location1',
             'Location',
             'Smoothing',
             'Class',
@@ -290,6 +292,8 @@ app.layout = html.Div(
             ],
 
             data=df_ratio.to_dict('records'),
+
+            hidden_columns=['Location1'],
 
             fill_width=True,
 
@@ -350,10 +354,11 @@ app.layout = html.Div(
             id="text",
             children=[
                 html.P('(1) Smoothing is done using the original lowess FORTRAN code (W. S. Cleveland, Bell Labs, 1985). (2) Classification Code: ‘c’ means Cases peaked, ‘C’ means at least half way down the peak, ‘d’, ‘D’ are same for Deaths.  The category order is from most complete ‘cCdD‘ to least complete ‘====‘. (3) Start Cases (Start_C) is the day the total number of cases exceed 50.  Days are counted from 22 January 2020. (4) Peak Cases (Peak_C) is day new cases peak. Within a category, data is sorted by increasing date cases peaked.',
-                style={'color':  '#36393b', 
-                            'font-family': 'Courier',
-                            'font-size': '12px'
-                    }
+                       style={
+                           'color':  '#36393b', 
+                           'font-family': 'Courier',
+                           'font-size': '12px'
+                       }
                 )
             ]
         ),
@@ -444,7 +449,7 @@ def plot_country_by_smoothing(tbl_df, countries, click_clear):
 
     for country in countries:
         #print(df_filter[country]['Country_Region_Safe'])
-        countryname = tbl_df[country]['Location']
+        countryname = tbl_df[country]['Location1']
         # print(countryname)
 
         country_mask = (df_filter['Country_Region_Safe'] == countryname)
