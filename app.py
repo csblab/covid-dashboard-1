@@ -152,10 +152,10 @@ def plot_country(country, yvals, y2vals):
         #margin={'l':0,'b':0,'r':10},
         title=dict(
             text=f'{country}',
-            y=0.98,
+            y=0.9,
             x=0,
-            xanchor='left',
-            yanchor='top',
+            #xanchor='left',
+            #yanchor='top',
         ),
 
         #title_text=f'{country}',
