@@ -263,6 +263,33 @@ df_ratio = pd.DataFrame.from_records(
 app = dash.Dash(__name__)
 server = app.server  #for server deployment
 
+app.index_string = """<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131327483-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-131327483-1');
+        </script>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>"""
+
 app.layout = html.Div(
     id="content",
     children=[
@@ -294,6 +321,8 @@ app.layout = html.Div(
             data=df_ratio.to_dict('records'),
 
             hidden_columns=['Location1'],
+
+            css=[{"selector": ".show-hide", "rule": "display: none"}],
 
             fill_width=True,
 
