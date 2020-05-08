@@ -263,32 +263,39 @@ df_ratio = pd.DataFrame.from_records(
 app = dash.Dash(__name__)
 server = app.server  #for server deployment
 
-app.index_string = """<!DOCTYPE html>
-<html>
-    <head>
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131327483-1"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
+# app.index_string = """<!DOCTYPE html>
+# <html>
+#     <head>
+#         <!-- Global site tag (gtag.js) - Google Analytics -->
+#         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131327483-1"></script>
+#         <script>
+#           window.dataLayer = window.dataLayer || [];
+#           function gtag(){dataLayer.push(arguments);}
+#           gtag('js', new Date());
 
-          gtag('config', 'UA-131327483-1');
-        </script>
-        {%metas%}
-        <title>{%title%}</title>
-        {%favicon%}
-        {%css%}
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-</html>"""
+#           gtag('config', 'UA-131327483-1');
+#         </script>
+#         {%metas%}
+#         <title>{%title%}</title>
+#         {%favicon%}
+#         {%css%}
+#     </head>
+#     <body>
+#         {%app_entry%}
+#         <footer>
+#             {%config%}
+#             {%scripts%}
+#             {%renderer%}
+#         </footer>
+#     </body>
+# </html>"""
+app.scripts.config.serve_locally = False,
+app.scripts.append_script({
+    'external_url': 'https://www.googletagmanager.com/gtag/js?id=UA-131327483-1'
+})
+app.scripts.append_script({
+    'external_url': 'https://cdn.jsdelivr.net/gh/lppier/lppier.github.io/gtag.js 5'
+})
 
 app.layout = html.Div(
     id="content",
