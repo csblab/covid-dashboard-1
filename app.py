@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import datetime
 
 
 # GLOBAL VARIABLES
@@ -168,8 +167,8 @@ def plot_country(country, yvals, y2vals):
     return fig
 
 
-
-DTHRESH = 50 # Threshold for minimum number of cases/deaths
+# Threshold for minimum number of cases/deaths
+DTHRESH = 50
 
 rootdir = pathlib.Path('.')
 output_dir = rootdir / 'data'  # directory where the csv files are
@@ -202,7 +201,6 @@ keepmask = df['Country_Region_Safe'].isin(keepers)
 df_filter = df[keepmask]
 
 
-
 # Make table for app display
 entry_list = list(df_filter['Country_Region_Safe'].unique())
 
@@ -211,8 +209,9 @@ death_mask = df_filter['Case_Type'] == 'Deaths'
 
 records = []
 for i, entry in enumerate(entry_list):
+
         country_mask = df_filter['Country_Region_Safe'] == entry
-        
+
         confirmed = df_filter[country_mask & confirmed_mask]
         deaths = df_filter[country_mask & death_mask]
         country_code_mask = df_filter.loc[country_mask, 'Classification_Code']
@@ -227,7 +226,7 @@ for i, entry in enumerate(entry_list):
         country_display = df_filter.loc[country_mask, 'Country_Region']
         datadict = {
                  'Location1': entry,
-                 'Location': country_display.to_list()[-1],  
+                 'Location': country_display.to_list()[-1],
                  'Smoothing': country_smoothing_mask.to_list()[-1],
                  'Class': country_code_mask.to_list()[-1],
                  'Cases': confirmed['nCases'].item(),
@@ -236,8 +235,7 @@ for i, entry in enumerate(entry_list):
                  'Deaths': deaths['nDeaths'].item(),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
-                 'Deaths/Cases(%)':  country_deaths_per_case_mask.to_list()[-1],           
-     
+                 'Deaths/Cases(%)':  country_deaths_per_case_mask.to_list()[-1]
         }
         records.append(datadict)
 
@@ -258,44 +256,40 @@ df_ratio = pd.DataFrame.from_records(
         ]
 )
 
-#Create Dash/Flask app
+# Create Dash/Flask app
 
 app = dash.Dash(__name__)
-server = app.server  #for server deployment
 
-# app.index_string = """<!DOCTYPE html>
-# <html>
-#     <head>
-#         <!-- Global site tag (gtag.js) - Google Analytics -->
-#         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131327483-1"></script>
-#         <script>
-#           window.dataLayer = window.dataLayer || [];
-#           function gtag(){dataLayer.push(arguments);}
-#           gtag('js', new Date());
+# Section for Google annlytics 
 
-#           gtag('config', 'UA-131327483-1');
-#         </script>
-#         {%metas%}
-#         <title>{%title%}</title>
-#         {%favicon%}
-#         {%css%}
-#     </head>
-#     <body>
-#         {%app_entry%}
-#         <footer>
-#             {%config%}
-#             {%scripts%}
-#             {%renderer%}
-#         </footer>
-#     </body>
-# </html>"""
-app.scripts.config.serve_locally = False,
-app.scripts.append_script({
-    'external_url': 'https://www.googletagmanager.com/gtag/js?id=UA-131327483-1'
-})
-app.scripts.append_script({
-    'external_url': 'https://cdn.jsdelivr.net/gh/lppier/lppier.github.io/gtag.js 5'
-})
+app.index_string = """<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131327483-1"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', 'UA-131327483-1');
+        </script>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>"""
+
+server = app.server  # for server deployment
 
 app.layout = html.Div(
     id="content",
@@ -334,7 +328,7 @@ app.layout = html.Div(
             fill_width=True,
 
             style_header={
-                         'textAlign': 'center', 
+                         'textAlign': 'center',
                          'font_size': '16px',
                          'backgroundColor': 'rgb(50, 50, 50)',
                          'color': 'white'
@@ -351,15 +345,11 @@ app.layout = html.Div(
                     'color': 'black',
             },
             style_data={
-                    #'font_family': 'cursive',
                     'font_size': '16px',
-                    #'text_align': 'left'
-
             },
 
             style_table={
                'maxHeight': '400px',
-               #'maxWidth': '1400px',
                'overflowY': 'scroll',
                'border': 'thin lightgrey solid'
             },
@@ -378,6 +368,7 @@ app.layout = html.Div(
                 {'if': {'column_id': 'Location'}, 'textAlign': 'left'},
 
             ],
+
             filter_action="native",
             sort_action="custom",
             sort_by=[],
@@ -386,6 +377,7 @@ app.layout = html.Div(
             selected_rows=[],
             page_action="native",
         ),
+
         html.Div(
             id="text",
             children=[
@@ -395,7 +387,7 @@ app.layout = html.Div(
                            'font-family': 'Courier',
                            'font-size': '12px'
                        }
-                )
+                    )
             ]
         ),
 
@@ -470,11 +462,6 @@ def plot_country_by_smoothing(tbl_df, countries, click_clear):
     fig_lst = []
     # Was the clear button clicked?
     global clear_trigger
-    # is_clear = any(
-    #     p['prop_id'] == 'clear-button.n_clicks'
-    #     for p in dash.callback_context.triggered
-    # )
-
     # if is_clear:
     if click_clear != clear_trigger:
         clear_trigger = click_clear
@@ -484,9 +471,8 @@ def plot_country_by_smoothing(tbl_df, countries, click_clear):
         raise PreventUpdate
 
     for country in countries:
-        #print(df_filter[country]['Country_Region_Safe'])
+
         countryname = tbl_df[country]['Location1']
-        # print(countryname)
 
         country_mask = (df_filter['Country_Region_Safe'] == countryname)
         cmask = country_mask & (df_filter['Case_Type'] == 'Confirmed')
@@ -496,10 +482,9 @@ def plot_country_by_smoothing(tbl_df, countries, click_clear):
 
         cvals = df_filter.loc[cmask][dates].values[0, :]
         dvals = df_filter.loc[dmask][dates].values[0, :]
-        # print(cvals)
-        # print(dvals)
         fig = plot_country(countryname, cvals, dvals)
         fig_lst.append(dcc.Graph(figure=fig))
+
     return fig_lst
 
 
