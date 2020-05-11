@@ -194,7 +194,7 @@ df.drop(removed_cols, axis=1, inplace=True)
 
 deathsonly = df[df['Case_Type'] == 'Deaths']
 dates = get_date_columns(df)
-
+last_date = dates[-1]
 min_death_mask = deathsonly[dates[-1]] >= DTHRESH
 keepers = deathsonly[min_death_mask]['Country_Region_Safe'].unique()
 keepmask = df['Country_Region_Safe'].isin(keepers)
@@ -229,10 +229,12 @@ for i, entry in enumerate(entry_list):
                  'Location': country_display.to_list()[-1],
                  'Smoothing': country_smoothing_mask.to_list()[-1],
                  'Class': country_code_mask.to_list()[-1],
-                 'Cases': confirmed['nCases'].item(),
+                 #'Cases': confirmed['nCases'].item(),
+                 'Cases': confirmed[last_date],
                  'Start_C': country_start_mask_c.to_list()[-1],
                  'Peak_C': country_peak_mask_c.to_list()[-1],
-                 'Deaths': deaths['nDeaths'].item(),
+                 #'Deaths': deaths['nDeaths'].item(),
+                 'Deaths': deaths[last_date],
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
                  'Deaths/Cases(%)':  country_deaths_per_case_mask.to_list()[-1]
