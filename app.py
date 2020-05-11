@@ -218,10 +218,8 @@ for i, entry in enumerate(entry_list):
         country_smoothing_mask = df_filter.loc[country_mask, 'Smoothing']
         country_start_mask_c = df_filter.loc[country_mask, 'Start_Cases']
         country_peak_mask_c = df_filter.loc[country_mask, 'Peak_Cases']
-
         country_start_mask_d = df_filter.loc[country_mask, 'Start_Deaths']
         country_peak_mask_d = df_filter.loc[country_mask, 'Peak_Deaths']
-
         country_deaths_per_case_mask = df_filter.loc[country_mask, 'Deaths_per_Case']
         country_display = df_filter.loc[country_mask, 'Country_Region']
         datadict = {
@@ -229,12 +227,12 @@ for i, entry in enumerate(entry_list):
                  'Location': country_display.to_list()[-1],
                  'Smoothing': country_smoothing_mask.to_list()[-1],
                  'Class': country_code_mask.to_list()[-1],
-                 #'Cases': confirmed['nCases'].item(),
-                 'Cases': confirmed[last_date],
+                 'Cases': confirmed['nCases'].item(),
+                 #'Cases': int(confirmed[last_date].to_list()[-1]),
                  'Start_C': country_start_mask_c.to_list()[-1],
                  'Peak_C': country_peak_mask_c.to_list()[-1],
-                 #'Deaths': deaths['nDeaths'].item(),
-                 'Deaths': deaths[last_date],
+                 'Deaths': deaths['nDeaths'].item(),
+                 #'Deaths': int(deaths[last_date].to_list()[-1]),
                  'Start_D': country_start_mask_d.to_list()[-1],
                  'Peak_D': country_peak_mask_d.to_list()[-1],
                  'Deaths/Cases(%)':  country_deaths_per_case_mask.to_list()[-1]
